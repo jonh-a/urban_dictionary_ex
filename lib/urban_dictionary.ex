@@ -52,7 +52,6 @@ defmodule UrbanDictionary do
     |> parse_response()
   end
 
-  @spec define_exact(binary) :: :error | {:ok, list}
   def define_exact(term) do
     case UrbanDictionary.get("#{get_base_url()}define?term=#{URI.encode(term)}")
          |> parse_response() do
