@@ -16,45 +16,60 @@ defmodule UrbanDictionary do
     get_in(body, ["list"])
   end
 
-  def random do
-    case UrbanDictionary.get("#{get_base_url()}random") do
+  def parse_response(resp) do
+    case resp do
       {:ok, resp} ->
-        {:ok, get_list(resp.body)}
+        list = get_list(resp.body)
+
+        if length(list) > 0 do
+          {:ok, list}
+        else
+          {:error, "No results were found."}
+        end
 
       {:error, _error} ->
-        :error
+        {:error, "Request failed."}
     end
+  end
+
+  def random do
+    UrbanDictionary.get("#{get_base_url()}random")
+    |> parse_response()
   end
 
   def words_of_the_day do
-    case UrbanDictionary.get("#{get_base_url()}words_of_the_day") do
-      {:ok, resp} ->
-        {:ok, get_list(resp.body)}
-
-      {:error, _error} ->
-        :error
-    end
+    UrbanDictionary.get("#{get_base_url()}words_of_the_day")
+    |> parse_response()
   end
 
   def define(term) do
-    case UrbanDictionary.get("#{get_base_url()}define?term=#{URI.encode(term)}") do
-      {:ok, resp} ->
-        {:ok, get_list(resp.body)}
-
-      {:error, _error} ->
-        :error
-    end
+    UrbanDictionary.get("#{get_base_url()}define?term=#{URI.encode(term)}")
+    |> parse_response()
   end
 
-  def define_exact(term) do
-    case UrbanDictionary.get("#{get_base_url()}define?term=#{URI.encode(term)}") do
-      {:ok, resp} ->
-        {:ok,
-         get_list(resp.body)
-         |> Enum.filter(fn x -> String.downcase(get_in(x, ["word"])) == String.downcase(term) end)}
+  def define_by_defid(defid) do
+    UrbanDictionary.get("#{get_base_url()}define?defid=#{URI.encode(defid)}")
+    |> parse_response()
+  end
 
-      {:error, _error} ->
-        :error
+  @spec define_exact(binary) :: :error | {:ok, list}
+  def define_exact(term) do
+    case UrbanDictionary.get("#{get_base_url()}define?term=#{URI.encode(term)}")
+         |> parse_response() do
+      {:ok, resp} ->
+        exact_matches =
+          Enum.filter(resp, fn x ->
+            String.downcase(get_in(x, ["word"])) == String.downcase(term)
+          end)
+
+        if length(exact_matches) > 0 do
+          {:ok, exact_matches}
+        else
+          {:error, "No exact matches were found."}
+        end
+
+      {:error, error} ->
+        {:error, error}
     end
   end
 end
