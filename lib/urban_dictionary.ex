@@ -16,7 +16,7 @@ defmodule UrbanDictionary do
     get_in(body, ["list"])
   end
 
-  def parse_response(resp) do
+  defp parse_response(resp) do
     case resp do
       {:ok, resp} ->
         list = get_list(resp.body)
