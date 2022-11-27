@@ -12,10 +12,24 @@ defmodule UrbanDictionary do
     "https://api.urbandictionary.com/v0/"
   end
 
+  defp get_list(body) do
+    get_in(body, ["list"])
+  end
+
   def random do
     case UrbanDictionary.get("#{get_base_url()}random") do
       {:ok, resp} ->
-        {:ok, resp}
+        {:ok, get_list(resp.body)}
+
+      {:error, _error} ->
+        :error
+    end
+  end
+
+  def words_of_the_day do
+    case UrbanDictionary.get("#{get_base_url()}words_of_the_day") do
+      {:ok, resp} ->
+        {:ok, get_list(resp.body)}
 
       {:error, _error} ->
         :error
@@ -25,7 +39,7 @@ defmodule UrbanDictionary do
   def define(term) do
     case UrbanDictionary.get("#{get_base_url()}define?term=#{URI.encode(term)}") do
       {:ok, resp} ->
-        {:ok, get_in(resp.body, ["list"])}
+        {:ok, get_list(resp.body)}
 
       {:error, _error} ->
         :error
@@ -36,7 +50,7 @@ defmodule UrbanDictionary do
     case UrbanDictionary.get("#{get_base_url()}define?term=#{URI.encode(term)}") do
       {:ok, resp} ->
         {:ok,
-         get_in(resp.body, ["list"])
+         get_list(resp.body)
          |> Enum.filter(fn x -> String.downcase(get_in(x, ["word"])) == String.downcase(term) end)}
 
       {:error, _error} ->
